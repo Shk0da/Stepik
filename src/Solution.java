@@ -1,14 +1,237 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static java.util.Optional.ofNullable;
 
 public class Solution {
 
     private static List<Object> storage = new ArrayList<>();
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
 
+    }
+
+    // greedyIceCream(getStringArrayFromFile("ice2.in"));
+    private static void greedyIceCream(String[] data) {
+        int cnt = 1;
+        Set<String> used = new HashSet<>();
+        for (int i = 0; i < data.length; i++) {
+            if (used.contains(data[i])) {
+                cnt++;
+                used = new HashSet<>();
+            }
+            used.add(data[i]);
+        }
+        System.out.println(cnt);
+    }
+
+    // greedyContest(new int[]{30, 40, 20}, 60);
+    // int[] data = getArrayFromFile("contest.in");
+    // greedyContest(data, 50000);
+    private static void greedyContest(int[] times, int allTime) {
+        Arrays.sort(times);
+        int i;
+        int penaltyTime = 0;
+        int totalSpendTime = 0;
+        for (i = 0; i < times.length; i++) {
+            if (totalSpendTime + times[i] >= allTime) break;
+            totalSpendTime += times[i];
+            penaltyTime += totalSpendTime;
+        }
+        System.out.println(i);
+        System.out.println(penaltyTime);
+    }
+
+    // int[][] data = getFromFile("request2.in");
+    // greedyUnlimitedSchedule(data[0], data[1]);
+    private static void greedyUnlimitedSchedule(int[] start, int[] end) {
+        sortAscTwoArraysBySecond(end, start);
+        Queue<int[]> queue = new ArrayDeque<>();
+        for (int i = 0; i < start.length; i++) {
+            queue.add(new int[]{start[i], end[i]});
+        }
+
+        int cnt = 0;
+        while (!queue.isEmpty()) {
+            List<int[]> used = new ArrayList<>();
+            AtomicInteger previousEnd = new AtomicInteger(0);
+            queue.iterator().forEachRemaining(time -> {
+                if (time[0] >= previousEnd.get()) {
+                    previousEnd.set(time[1]);
+                    used.add(time);
+                }
+            });
+            cnt++;
+            previousEnd.set(0);
+            queue.removeAll(used);
+        }
+        System.out.println(cnt);
+    }
+
+    //  greedyMinimalGasStations(new int[]{0, 13, 16, 21, 35, 38, 61, 67, 70, 77, 81, 100}, 25);
+    /*
+        int[] azs = new int[50002];
+        azs[0] = 0;
+        BufferedReader file = new BufferedReader(new FileReader("petrol2.in"));
+        AtomicLong idx = new AtomicLong(1);
+        file.lines().forEach(line -> {
+            String[] data = line.trim().split(" ");
+            for (String datum : data) {
+                azs[idx.intValue()] = Integer.parseInt(datum);
+                idx.incrementAndGet();
+            }
+        });
+        azs[50001] = 1000000000;
+        greedyMinimalGasStations(azs, 1000000);
+    */
+    private static void greedyMinimalGasStations(int[] distance, final int fullFuelDistance) {
+        int cnt = 0;
+        int previousDist = 0;
+        int fuel = fullFuelDistance;
+        for (int i = 0; i < distance.length - 1; i++) {
+            int dist = distance[i];
+            int way = dist - previousDist;
+            fuel = fuel - way;
+            int nextWay = distance[i + 1] - dist;
+            System.out.printf("fuel: %d, way: %d, gasStation: %d, nextWay: %d\n", fuel, dist, distance[i], nextWay);
+            if (fuel <= nextWay) {
+                System.out.printf("GAS STATION!: fuel: %d -> %d\n", fuel, fullFuelDistance);
+                cnt++;
+                fuel = fullFuelDistance;
+            }
+            previousDist = dist;
+        }
+        System.out.println(cnt);
+    }
+
+    // greedyContinuousBag(new int[]{2, 4, 10}, new int[]{10, 20, 30}, 14);
+    private static void greedyContinuousBag(int[] weight, int[] cost, int maxWeight) {
+        sortDescTwoArraysByRelationshipSecondToFirst(weight, cost);
+        double currentCost = 0;
+        double currentWeight = 0;
+        for (int i = 0; i < weight.length; i++) {
+            if (currentWeight + weight[i] <= maxWeight) {
+                currentCost += cost[i];
+                currentWeight += weight[i];
+                System.out.println("weight: " + weight[i] + ", cost: " + cost[i]);
+            } else {
+                double partWeight = maxWeight - currentWeight;
+                double partCost = cost[i] / (weight[i] / partWeight);
+                currentCost += partCost;
+                currentWeight += partWeight;
+                System.out.println("weight: " + partWeight + " of " + weight[i] + ", cost: " + partCost + " of " + cost[i]);
+            }
+            if (currentWeight == maxWeight) break;
+        }
+        System.out.println("bag: " + currentWeight + ", cost: " + currentCost);
+    }
+
+    // greedyBag(new int[]{2, 5, 10}, new int[]{10, 20, 30}, 12);
+    private static void greedyBag(int[] weight, int[] cost, int maxWeight) {
+        sortDescTwoArraysByRelationshipSecondToFirst(weight, cost);
+        int currentCost = 0;
+        int currentWeight = 0;
+        for (int i = 0; i < weight.length; i++) {
+            if (currentWeight + weight[i] <= maxWeight) {
+                currentCost += cost[i];
+                currentWeight += weight[i];
+                System.out.println("weight: " + weight[i] + ", cost: " + cost[i]);
+            } else break;
+        }
+        System.out.println("bag: " + currentWeight + ", cost: " + currentCost);
+    }
+
+    // greedySchedule(new int[]{5, 3, 1, 7}, new int[]{7, 6, 5, 9});
+    private static void greedySchedule(int[] start, int[] end) {
+        sortAscTwoArraysBySecond(start, end);
+        int cnt = 1;
+        int last = 0;
+        System.out.print(start[last] + " -> ");
+        for (int i = 1; i < start.length; i++) {
+            if (start[i] >= end[last]) {
+                cnt++;
+                last = i;
+                System.out.print(start[i] + " -> ");
+            }
+        }
+        System.out.println(end[last]);
+        System.out.println(cnt);
+    }
+
+    // greedyScheduleWithSumTime(new int[]{1, 3, 5}, new int[]{5, 6, 7});
+    private static void greedyScheduleWithSumTime(int[] start, int[] end) {
+        Map<List<int[]>, Integer> ways = new HashMap<>();
+        for (int idx : bestOrderByCost(end)) {
+            List<int[]> lines = new ArrayList<>();
+            int a = start[idx];
+            int b = end[idx];
+            lines.add(new int[]{a, b});
+            for (int j = idx + 1; j < start.length; j++) {
+                int a2 = start[j];
+                int b2 = end[j];
+                if (a2 >= b) {
+                    lines.add(new int[]{a2, b2});
+                    break;
+                }
+            }
+            if (!lines.isEmpty()) {
+                ways.put(lines, lines.stream().map(line -> line[1] - line[0]).reduce(0, Integer::sum));
+            }
+        }
+        Map.Entry<List<int[]>, Integer> bestResult = ways.entrySet()
+                .stream()
+                .max(Comparator.comparing(Map.Entry::getValue))
+                .orElseThrow(() -> new IllegalArgumentException("Not found best way"));
+        System.out.println("Total: " + ways.size());
+        System.out.print("Best: ");
+        bestResult.getKey().forEach(it -> System.out.print(Arrays.toString(it) + " "));
+        System.out.println("-> " + bestResult.getValue());
+    }
+
+    // greedyPlan(new int[]{1, 2, 2, 3, 5}, new int[]{2, 5, 4, 1, 3});
+    private static void greedyPlan(int[] deadline, int[] cost) {
+        long sum = 0;
+        boolean[] usedDays = new boolean[deadline.length];
+        int[] bestOrderByCost = bestOrderByCost(cost);
+        for (int k = 0; k < bestOrderByCost.length; k++) {
+            int idx = bestOrderByCost[k];
+            int day = deadline[idx];
+            while (day >= 1 && usedDays[day]) {
+                day--;
+            }
+            if (day == 0) continue;
+            usedDays[day] = true;
+            sum += cost[idx];
+        }
+        System.out.println(sum);
+    }
+
+    // moneyChange(27, new int[]{1, 2, 8, 10}, 3);
+    private static void moneyChange(int sum, int[] coins, int coinIndex) {
+        List<Integer> result = new ArrayList<>();
+        while (sum != 0 && coinIndex >= 0) {
+            int coin = coins[coinIndex];
+            if (sum >= coin) {
+                result.add(coin);
+                sum = sum - coin;
+            } else {
+                coinIndex--;
+            }
+        }
+        System.out.println(result);
     }
 
     //  recChips(0, new char[5], 2, false);
@@ -37,7 +260,7 @@ public class Solution {
                     add('a');
                     add('b');
                     add('c');
-                }}.stream().filter(it -> it != first && it != second).findFirst().get();
+                }}.stream().filter(it -> it != first && it != second).findFirst().orElseThrow();
                 String newRow = s.substring(0, i) + newCharacter + s.substring(i + 2);
                 System.out.println(newRow);
                 return replace(newRow);
@@ -47,7 +270,7 @@ public class Solution {
     }
 
     // Complete the stringReduction function below.
-    static int stringReduction(String s) {
+    private static int stringReduction(String s) {
         boolean isSame = true;
         for (int i = s.length() - 1; i > 0; i--) {
             if (s.charAt(i) != s.charAt(i - 1)) {
@@ -180,7 +403,7 @@ public class Solution {
     }
 
     // checkBrackets("()()", '(', ')');
-    public static void checkBrackets(String input, char left, char right) {
+    private static void checkBrackets(String input, char left, char right) {
         boolean result = true;
         int leftCounter = 0;
         int rightCounter = 0;
@@ -233,5 +456,114 @@ public class Solution {
             recNumbers(i + 1, arr, len, used);
             used[it] = false;
         }
+    }
+
+    private static void sortDescTwoArraysByRelationshipSecondToFirst(int[] arr1, int[] arr2) {
+        for (int i = 0; i < arr2.length; i++) {
+            for (int j = i; j < arr2.length; j++) {
+                if (arr2[j] / arr1[j] > arr2[i] / arr1[i]) {
+                    swap(arr1, i, j);
+                    swap(arr2, i, j);
+                }
+            }
+        }
+    }
+
+    private static void sortDesc(int[] arr1) {
+        for (int i = 0; i < arr1.length; i++) {
+            for (int j = i; j < arr1.length; j++) {
+                if (arr1[j] > arr1[i]) {
+                    swap(arr1, i, j);
+                }
+            }
+        }
+    }
+
+    private static void sortDescTwoArraysBySecond(int[] arr1, int[] arr2) {
+        for (int i = 0; i < arr2.length; i++) {
+            for (int j = i; j < arr2.length; j++) {
+                if (arr2[j] > arr2[i]) {
+                    swap(arr1, i, j);
+                    swap(arr2, i, j);
+                }
+            }
+        }
+    }
+
+    private static void sortAscTwoArraysBySecond(int[] arr1, int[] arr2) {
+        for (int i = 0; i < arr2.length; i++) {
+            for (int j = i; j < arr2.length; j++) {
+                if (arr2[j] < arr2[i]) {
+                    swap(arr1, i, j);
+                    swap(arr2, i, j);
+                }
+            }
+        }
+    }
+
+    private static void swap(int[] x, int a, int b) {
+        int t = x[a];
+        x[a] = x[b];
+        x[b] = t;
+    }
+
+    private static int[] bestOrderByCost(final int[] cost) {
+        int[] mass = Arrays.copyOf(cost, cost.length);
+        Arrays.sort(mass);
+        Queue<Integer> maxes = new ArrayDeque<>();
+        for (int i = mass.length - 1; i >= 0; i--) {
+            maxes.add(mass[i]);
+        }
+        int[] order = new int[cost.length];
+        for (int i = 0; i < order.length; i++) {
+            int maxCost = ofNullable(maxes.poll()).orElse(0);
+            for (int j = 0; j < cost.length; j++) {
+                if (cost[j] == maxCost) {
+                    order[i] = j;
+                    break;
+                }
+            }
+        }
+        return order;
+    }
+
+    private static int[][] getFromFile(String fileName) throws IOException {
+        BufferedReader file = new BufferedReader(new FileReader(fileName));
+        int size = Integer.parseInt(file.readLine().trim());
+        int[] ax = new int[size];
+        int[] bx = new int[size];
+        AtomicLong idx = new AtomicLong(0);
+        file.lines().forEach(line -> {
+            String[] data = line.trim().split(" ");
+            ax[idx.intValue()] = Integer.parseInt(data[0]);
+            bx[idx.intValue()] = Integer.parseInt(data[1]);
+            idx.incrementAndGet();
+        });
+        return new int[][]{ax, bx};
+    }
+
+    private static int[] getArrayFromFile(String fileName) throws IOException {
+        BufferedReader file = new BufferedReader(new FileReader(fileName));
+        int size = Integer.parseInt(file.readLine().trim());
+        List<Integer> collection = new ArrayList<>(size);
+        file.lines().forEach(line -> {
+            String[] data = line.trim().split(" ");
+            for (String datum : data) {
+                collection.add(Integer.parseInt(datum));
+            }
+        });
+        return collection.stream().mapToInt(i -> i).toArray();
+    }
+
+    private static String[] getStringArrayFromFile(String fileName) throws IOException {
+        BufferedReader file = new BufferedReader(new FileReader(fileName));
+        int size = Integer.parseInt(file.readLine().trim());
+        String[] collection = new String[size];
+        AtomicLong idx = new AtomicLong(0);
+        file.lines().forEach(line -> {
+            collection[idx.intValue()] = line.trim();
+            idx.incrementAndGet();
+        });
+        return collection;
     }
 }
