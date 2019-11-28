@@ -1,19 +1,13 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
+import static java.lang.Integer.parseInt;
+import static java.lang.Math.*;
 import static java.util.Optional.ofNullable;
 
 public class Solution {
@@ -21,7 +15,455 @@ public class Solution {
     private static List<Object> storage = new ArrayList<>();
 
     public static void main(String[] args) throws IOException {
+        treeArithmeticExpression(getArrayFromFile("arithm.in"), 25);
+        dynamicArithmeticExpression(getArrayFromFile("arithm2.in"), -3360);
+    }
 
+    private static void dynamicArithmeticExpression(int[] args, int result) {
+        char[] action = new char[args.length - 1];
+
+        printDynamicArithmeticExpression(args, action);
+    }
+
+    private static void printDynamicArithmeticExpression(int[] args, char[] actions) {
+        int res = args[0];
+        for (int i = 0; i < actions.length; i++) {
+            if (actions[i] == '+') {
+                res += args[i + 1];
+            }
+            if (actions[i] == '-') {
+                res -= args[i + 1];
+            }
+        }
+
+        for (int i = 0; i < args.length; i++) {
+            System.out.print(args[i]);
+            if (i < actions.length) {
+                System.out.print(actions[i]);
+            }
+        }
+        System.out.println("=" + res);
+    }
+
+    // treeArithmeticExpression(getArrayFromFile("arithm.in"), 25);
+    private static void treeArithmeticExpression(int[] args, int result) {
+        StringBuilder sb = new StringBuilder();
+        recFillTree(new Node(null, args[0], args[0]), args, 1, result, sb);
+        System.out.println(sb.toString() + "=" + result);
+    }
+
+    private static void recFillTree(Node root, int[] args, int i, int result, StringBuilder sb) {
+        if (i == args.length) {
+            if (root.value == result) {
+                recNodeExpression(root, sb);
+            }
+            return;
+        }
+
+        root.plus = new Node(root, args[i], root.value + args[i]);
+        root.minus = new Node(root, args[i], root.value - args[i]);
+
+        recFillTree(root.plus, args, i + 1, result, sb);
+        recFillTree(root.minus, args, i + 1, result, sb);
+    }
+
+    private static void recNodeExpression(Node currentNode, StringBuilder sb) {
+        Node parent = currentNode.previous;
+        sb.insert(0, currentNode.arg);
+        if (null == parent) return;
+        if (parent.plus == currentNode) {
+            sb.insert(0, "+");
+        }
+        if (parent.minus == currentNode) {
+            sb.insert(0, "-");
+        }
+        recNodeExpression(parent, sb);
+    }
+
+    private static final class Node {
+        private int arg;
+        private int value;
+        private Node previous;
+        private Node plus;
+        private Node minus;
+
+        Node(Node previous, int arg, int value) {
+            this.previous = previous;
+            this.arg = arg;
+            this.value = value;
+            plus = minus = null;
+        }
+    }
+
+    // dynamicLimitedBag(new int[]{2, 5, 10}, new int[]{10, 20, 30}, 12);
+    // int[][] data =  getFromFile("rucksack.in");
+    // dynamicLimitedBag(data[0], data[1], 10000);
+    private static void dynamicLimitedBag(int[] weights, int[] costs, int needed) {
+        int n = weights.length;
+        int[][] dp = new int[needed + 1][n + 1];
+        for (int j = 1; j <= n; j++) {
+            for (int w = 1; w <= needed; w++) {
+                dp[w][j] = dp[w][j - 1];
+                if (weights[j - 1] <= w && dp[w - weights[j - 1]][j - 1] + costs[j - 1] > dp[w][j - 1]) {
+                    dp[w][j] = dp[w - weights[j - 1]][j - 1] + costs[j - 1];
+                }
+            }
+        }
+        int sum = dp[needed][n];
+        System.out.println(sum);
+
+        Set<Integer> items = new TreeSet<>();
+        for (int i = n; i > 0 && sum > 0; i--) {
+            if (sum == dp[needed][i - 1]) continue;
+            items.add(weights[i - 1]);
+            sum = sum - costs[i - 1];
+            needed = needed - weights[i - 1];
+        }
+        items.forEach(it -> System.out.print(it + " "));
+        System.out.println();
+    }
+
+    // pascalTriangle(50, 20)
+    private static long pascalTriangle(int n, int k) {
+        long[][] c = new long[n + 1][n + 1];
+        for (int i = 0; i <= n; i++) {
+            c[i][0] = c[i][i] = 1;
+            for (int j = 1; j < i; j++) {
+                c[i][j] = c[i - 1][j - 1] + c[i - 1][j];
+            }
+        }
+        System.out.println(c[n][k]);
+        return c[n][k];
+    }
+
+    // dynamicCountSubSequenceGrowUp(new int[]{3, 2, 1, 4, 6, 5, 7});
+    private static void dynamicCountSubSequenceGrowUp(int[] array) {
+        int n = array.length;
+        int k = dynamicSubSequenceGrowUp(array);
+
+        long sum = 0;
+        int[][] dp = new int[k][n];
+        for (int i = 0; i < n; i++) {
+            dp[0][i] = 1;
+        }
+
+        for (int l = 1; l < k; l++) {
+            for (int i = l; i < n; i++) {
+                dp[l][i] = 0;
+                for (int j = l - 1; j < i; j++) {
+                    if (array[j] < array[i]) {
+                        dp[l][i] += dp[l - 1][j];
+                    }
+                }
+            }
+        }
+
+        for (int i = k - 1; i < n; i++) {
+            sum += dp[k - 1][i];
+        }
+        System.out.println(sum);
+    }
+
+    // dynamicSubSequenceGrowUp(new int[]{7, 1, 3, 2, 4});
+    private static int dynamicSubSequenceGrowUp(int[] array) {
+        int[] subsequence = new int[array.length + 1];
+        int[] lengthOfSubsequence = new int[array.length + 1];
+        for (int i = 0; i < array.length; i++) {
+            lengthOfSubsequence[i] = 1;
+            subsequence[i] = -1;
+            for (int j = 0; j < i; j++) {
+                if (array[j] < array[i] && lengthOfSubsequence[j] + 1 > lengthOfSubsequence[i]) {
+                    lengthOfSubsequence[i] = lengthOfSubsequence[j] + 1;
+                    subsequence[i] = j;
+                }
+            }
+        }
+
+        int pos = 0;
+        int ans = lengthOfSubsequence[0];
+        for (int i = 0; i < array.length; ++i) {
+            if (lengthOfSubsequence[i] > ans) {
+                ans = lengthOfSubsequence[i];
+                pos = i;
+            }
+        }
+
+        Deque<Integer> path = new ArrayDeque<>();
+        while (pos != -1) {
+            path.push(pos);
+            pos = subsequence[pos];
+        }
+
+        path.forEach(it -> System.out.print(array[it] + " "));
+        System.out.println();
+        System.out.println(ans);
+        System.out.println();
+        return ans;
+    }
+
+    // dynamicDominoByMod(42, 100);
+    // dynamicDominoByMod(100000, 1000000000);
+    private static void dynamicDominoByMod(int n, int m) {
+        if (n < 50) {
+            double goldenSection = (sqrt(5) + 1) / 2;
+            int fastResult = (int) round(pow(goldenSection, n + 1) / sqrt(5));
+            System.out.println(fastResult % m);
+            return;
+        }
+
+        int x1 = 1;
+        int x2 = 1;
+        int res = 0;
+        for (int i = 2; i < n + 1; i++) {
+            res = (x1 + x2) % m;
+            x1 = x2;
+            x2 = res;
+        }
+        System.out.println(res);
+    }
+
+    //  BufferedReader file = new BufferedReader(new FileReader("seq2.in"));
+    //  int firstSize = parseInt(file.readLine().trim());
+    //  int[] firstArg = Arrays.stream(file.readLine().trim().split(" ")).mapToInt(Integer::parseInt).toArray();
+    //  int secondSize = parseInt(file.readLine().trim());
+    //  int[] secondArg = Arrays.stream(file.readLine().trim().split(" ")).mapToInt(Integer::parseInt).toArray();
+    // dynamicSubSequence(new int[]{1, 2, 3, 4}, new int[]{3, 1, 4, 5, 3, 1, 2, 4});
+    private static void dynamicSubSequence(int[] a, int[] b) {
+        if (a.length > b.length) {
+            int[] tmp = a;
+            a = b;
+            b = tmp;
+        }
+        int[][] maxCounts = new int[a.length + 1][b.length + 1];
+        for (int i = 1; i <= a.length; i++) {
+            for (int j = 1; j <= b.length; j++) {
+                maxCounts[i][j] = max(maxCounts[i - 1][j], maxCounts[i][j - 1]);
+                if (a[i - 1] == b[j - 1] && maxCounts[i - 1][j - 1] + 1 > maxCounts[i][j]) {
+                    maxCounts[i][j] = maxCounts[i - 1][j - 1] + 1;
+                }
+            }
+        }
+        System.out.println(maxCounts[a.length][b.length]);
+
+        int maxCount = 0;
+        List<Integer> subSequence = new ArrayList<>();
+        for (int i = 0; i < maxCounts.length; i++) {
+            for (int j = 0; j < maxCounts[i].length; j++) {
+                if (maxCounts[i][j] > maxCount) {
+                    maxCount = maxCounts[i][j];
+                    subSequence.add(a[i - 1]);
+                }
+            }
+        }
+        System.out.println(subSequence.stream().map(String::valueOf).collect(Collectors.joining(" ")));
+    }
+
+    // dynamicBag(new int[]{2, 4, 10}, new int[]{10, 20, 30}, 14);
+    private static void dynamicBag(int[] weight, int[] cost, int maxWeight) {
+        int[] weights = new int[maxWeight + 1];
+        int[] costs = new int[maxWeight + 1];
+        for (int weightSum = 1; weightSum <= maxWeight; weightSum++) {
+            costs[weightSum] = costs[weightSum - 1];
+            weights[weightSum] = weights[weightSum - 1];
+            for (int costIdx = 0; costIdx < cost.length; costIdx++) {
+                int currentCost = cost[costIdx];
+                int currentWeight = weight[costIdx];
+                if ((weightSum - weights[weightSum - 1]) - currentWeight >= 0 && costs[weightSum - 1] + currentCost > costs[weightSum]) {
+                    costs[weightSum] = costs[weightSum - 1] + currentCost;
+                    weights[weightSum] = weights[weightSum - 1] + currentWeight;
+                }
+            }
+        }
+        System.out.println(costs[maxWeight]);
+    }
+
+    // dynamicMoneyChange(27, new int[]{1, 2, 8, 10});
+    private static void dynamicMoneyChange(int sum, int[] coins) {
+        int[] change = new int[sum + 1];
+        int[] counter = new int[sum + 1];
+        for (int money = 1; money <= sum; money++) {
+            counter[money] = Integer.MAX_VALUE;
+            for (int j = 0; j < coins.length; j++) {
+                int coin = coins[j];
+                if (money - coin >= 0 && counter[money - coin] + 1 < counter[money]) {
+                    counter[money] = counter[money - coin] + 1;
+                    change[money] = coin;
+                }
+            }
+        }
+        System.out.println(counter[sum]);
+        recount(change, sum);
+        System.out.println();
+    }
+
+    private static void recount(int[] change, int i) {
+        if (i == 0) return;
+        recount(change, i - change[i]);
+        if (i - change[i] > 0) {
+            System.out.print("+");
+        }
+        System.out.print(change[i]);
+    }
+
+    //  dynamicSquare(new int[][]{
+    //                // j0 j1 jn
+    //                {1, 3, 7, -1, 7, 11}, // i0
+    //                {2, 6, 5, 1, 1, 3,}, // i1
+    //                {-3, 0, 2, 0, 3, 8}, // in
+    //                {5, 1, 3, 1, 4, 7},
+    //                {6, 1, -2, 2, 1, 0},
+    //        }, 5, 6, 5, 6);
+    private static int[][] sum = null;
+
+    private static int dynamicSquare(int[][] field, int x1, int y1, int x2, int y2) {
+        int n = field.length;
+        int m = field[0].length;
+        if (sum == null) {
+            sum = new int[n][m];
+            sum[0][0] = field[0][0];
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < m; j++) {
+                    if (i > 0 && j > 0) {
+                        sum[i][j] = field[i][j] + (sum[i - 1][j] + sum[i][j - 1] - sum[i - 1][j - 1]);
+                    } else if (i > 0) {
+                        sum[i][j] = field[i][j] + sum[i - 1][j];
+                    } else if (j > 0) {
+                        sum[i][j] = field[i][j] + sum[i][j - 1];
+                    } else {
+                        sum[i][j] = field[i][j];
+                    }
+                }
+            }
+        }
+
+        x1 = x1 - 1;
+        x2 = x2 - 1;
+        y1 = y1 - 1;
+        y2 = y2 - 1;
+        int s = sum[x2][y2];
+        int a = x1 > 0 ? sum[x1 - 1][y2] : 0;
+        int b = y1 > 0 ? sum[x2][y1 - 1] : 0;
+        int ab = x1 > 0 && y1 > 0 ? sum[x1 - 1][y1 - 1] : 0;
+        int res = s - a - b + ab;
+        return res;
+    }
+
+    // dynamicBug(new int[][]{
+    //                {5, 3, 2, 2},
+    //                {2, 1, 7, 3},
+    //                {4, 3, 1, 2},
+    //        });
+    private static void dynamicBug(int[][] field) {
+        int n = field.length;
+        int m = field[0].length;
+        int[][] d = new int[n][m];
+        int[][] p = new int[n][m];
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                d[i][j] = field[i][j];
+                int iMax = 0;
+                if (i > 0) {
+                    iMax = max(d[i][j], d[i - 1][j] + field[i][j]);
+                    d[i][j] = max(d[i][j], iMax);
+                    p[i][j] = 0;
+                }
+                if (j > 0) {
+                    int jMax = max(d[i][j], d[i][j - 1] + field[i][j]);
+                    d[i][j] = max(d[i][j], jMax);
+                    if (jMax > iMax) {
+                        p[i][j] = 1;
+                    }
+                }
+            }
+        }
+        System.out.println(d[n - 1][m - 1]);
+        recount(p, n - 1, m - 1);
+        System.out.println();
+    }
+
+    private static void recount(int[][] p, int i, int j) {
+        if (i == 0 && j == 0) return;
+        if (p[i][j] == 0) {
+            recount(p, i - 1, j);
+            System.out.print("D");
+        }
+        if (p[i][j] == 1) {
+            recount(p, i, j - 1);
+            System.out.print("R");
+        }
+    }
+
+    // nonDynamicBug(new int[][]{
+    //                {5, 3, 2, 2},
+    //                {2, 1, 7, 3},
+    //                {4, 3, 1, 2},
+    //        });
+    private static void nonDynamicBug(int[][] field) {
+        int res = 0;
+        for (int i = 0, j = 0; i < field.length && j < field[i].length; ) {
+            res += field[i][j];
+            if (i + 1 >= field.length) {
+                j++;
+                System.out.print("D");
+            } else if (j + 1 >= field[i].length) {
+                i++;
+                System.out.print("R");
+            } else if (field[i + 1][j] > field[i][j + 1]) {
+                i++;
+                System.out.print("D");
+            } else {
+                j++;
+                System.out.print("R");
+            }
+        }
+        System.out.println();
+        System.out.println(res);
+    }
+
+    // dynamicTripleDomino(10);
+    private static void dynamicTripleDomino(int n) {
+        int x1 = 1;
+        int x2 = 1;
+        int x3 = x1 + x2;
+        int res = 0;
+        for (int i = 3; i < n; i++) {
+            res = x3 + x1;
+            x1 = x2;
+            x2 = x3;
+            x3 = res;
+        }
+        System.out.println(res);
+    }
+
+    // dynamicDomino(25);
+    private static void dynamicDomino(int n) {
+        int x1 = 1;
+        int x2 = 1;
+        int res = 0;
+        for (int i = 2; i < n; i++) {
+            res = x1 + x2;
+            x1 = x2;
+            x2 = res;
+        }
+        System.out.println(res);
+
+        double goldenSection = (sqrt(5) + 1) / 2;
+        int fastResult = (int) round(pow(goldenSection, n) / sqrt(5));
+        System.out.println(fastResult);
+    }
+
+    // dynamicRecDomino(4, 0);
+    // System.out.println(ans);
+    private static int ans = 0;
+
+    private static void dynamicRecDomino(int n, int sum) {
+        if (sum > n) return;
+        if (sum == n) {
+            ans++;
+            return;
+        }
+        dynamicRecDomino(n, sum + 1);
+        dynamicRecDomino(n, sum + 2);
     }
 
     // greedyIceCream(getStringArrayFromFile("ice2.in"));
@@ -527,16 +969,31 @@ public class Solution {
         return order;
     }
 
+    private static int[][] getFromFileDoubleSize(String fileName) throws IOException {
+        BufferedReader file = new BufferedReader(new FileReader(fileName));
+        String[] nm = file.readLine().trim().split(" ");
+        int[][] arr = new int[parseInt(nm[0])][parseInt(nm[1])];
+        AtomicLong idx = new AtomicLong(0);
+        file.lines().forEach(line -> {
+            arr[idx.intValue()] = Arrays.stream(line.trim().split(" "))
+                    .map(Integer::parseInt)
+                    .mapToInt(i -> i)
+                    .toArray();
+            idx.incrementAndGet();
+        });
+        return arr;
+    }
+
     private static int[][] getFromFile(String fileName) throws IOException {
         BufferedReader file = new BufferedReader(new FileReader(fileName));
-        int size = Integer.parseInt(file.readLine().trim());
+        int size = parseInt(file.readLine().trim());
         int[] ax = new int[size];
         int[] bx = new int[size];
         AtomicLong idx = new AtomicLong(0);
         file.lines().forEach(line -> {
             String[] data = line.trim().split(" ");
-            ax[idx.intValue()] = Integer.parseInt(data[0]);
-            bx[idx.intValue()] = Integer.parseInt(data[1]);
+            ax[idx.intValue()] = parseInt(data[0]);
+            bx[idx.intValue()] = parseInt(data[1]);
             idx.incrementAndGet();
         });
         return new int[][]{ax, bx};
@@ -544,12 +1001,12 @@ public class Solution {
 
     private static int[] getArrayFromFile(String fileName) throws IOException {
         BufferedReader file = new BufferedReader(new FileReader(fileName));
-        int size = Integer.parseInt(file.readLine().trim());
+        int size = parseInt(file.readLine().trim());
         List<Integer> collection = new ArrayList<>(size);
         file.lines().forEach(line -> {
             String[] data = line.trim().split(" ");
             for (String datum : data) {
-                collection.add(Integer.parseInt(datum));
+                collection.add(parseInt(datum));
             }
         });
         return collection.stream().mapToInt(i -> i).toArray();
@@ -557,7 +1014,7 @@ public class Solution {
 
     private static String[] getStringArrayFromFile(String fileName) throws IOException {
         BufferedReader file = new BufferedReader(new FileReader(fileName));
-        int size = Integer.parseInt(file.readLine().trim());
+        int size = parseInt(file.readLine().trim());
         String[] collection = new String[size];
         AtomicLong idx = new AtomicLong(0);
         file.lines().forEach(line -> {
