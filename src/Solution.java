@@ -14,35 +14,43 @@ public class Solution {
 
     private static List<Object> storage = new ArrayList<>();
 
-    public static void main(String[] args) throws IOException {
-        treeArithmeticExpression(getArrayFromFile("arithm.in"), 25);
-        dynamicArithmeticExpression(getArrayFromFile("arithm2.in"), -3360);
+    public static void main(String[] arg) throws IOException {
+
     }
 
+    // dynamicArithmeticExpression(getArrayFromFile("arithm.in"), 25);
     private static void dynamicArithmeticExpression(int[] args, int result) {
-        char[] action = new char[args.length - 1];
+        int n = args.length;
+        int[][] storage = new int[n][];
+        char[][] actions = new char[n][];
 
-        printDynamicArithmeticExpression(args, action);
-    }
-
-    private static void printDynamicArithmeticExpression(int[] args, char[] actions) {
-        int res = args[0];
-        for (int i = 0; i < actions.length; i++) {
-            if (actions[i] == '+') {
-                res += args[i + 1];
-            }
-            if (actions[i] == '-') {
-                res -= args[i + 1];
-            }
-        }
-
-        for (int i = 0; i < args.length; i++) {
-            System.out.print(args[i]);
-            if (i < actions.length) {
-                System.out.print(actions[i]);
+        storage[0] = new int[]{args[0]};
+        actions[0] = new char[1];
+        for (int i = 1; i < args.length; i++) {
+            storage[i] = new int[storage[i - 1].length * 2];
+            actions[i] = new char[actions[i - 1].length * 2];
+            for (int k = 0, idx = 0; k < storage[i - 1].length; k++, idx = idx + 2) {
+                int prev = storage[i - 1][k];
+                storage[i][idx] = prev + args[i];
+                actions[i][idx] = '+';
+                storage[i][idx + 1] = prev - args[i];
+                actions[i][idx + 1] = '-';
             }
         }
-        System.out.println("=" + res);
+
+        for (int j = 0; j < storage[n - 1].length; j++) {
+            int val = storage[n - 1][j];
+            if (val == result) {
+                StringBuilder sb = new StringBuilder();
+                for (int i = n - 1, moult = 1; i >= 0; i--, moult = moult * 2) {
+                    sb.insert(0, args[i]);
+                    if (i != 0) {
+                        sb.insert(0, actions[i][j / moult]);
+                    }
+                }
+                System.out.println(sb + "=" + result);
+            }
+        }
     }
 
     // treeArithmeticExpression(getArrayFromFile("arithm.in"), 25);
