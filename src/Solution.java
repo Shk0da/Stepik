@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import static java.lang.Integer.parseInt;
 import static java.lang.Math.*;
+import static java.util.Arrays.fill;
 import static java.util.Optional.ofNullable;
 
 public class Solution {
@@ -15,10 +16,148 @@ public class Solution {
     private static List<Object> storage = new ArrayList<>();
 
     public static void main(String[] arg) throws IOException {
-
+        bitMaskDominoByMod(5000, 6, 1000000000);
     }
 
-    // dynamicArithmeticExpression(getArrayFromFile("arithm.in"), 25);
+    // bitMaskDominoByMod(3, 2, 10);
+    // bitMaskDominoByMod(5, 6, 1000000000);
+    // bitMaskDominoByMod(16, 16, 1000000000); -> 2444888770250892795802079170816, % 1000000000 = 79170816
+    private static void bitMaskDominoByMod(int n, int m, long mod) {
+        long[][] d = new long[n + 1][1 << m];
+        d[0][0] = 1;
+        for (int x = 0; x < n; x++) {
+            for (long mask = 0; mask < (1L << m); mask++) {
+                calcBitMaskDominoByMod(d, n, m, mod, x, 0, mask, 0);
+            }
+        }
+        System.out.println(d[n][0]);
+    }
+
+    private static void calcBitMaskDominoByMod(long[][] d, int n, int m, long mod, int x, long y, long mask, long nextMask) {
+        if (x == n) return;
+        if (y >= m) {
+            d[x + 1][(int) (nextMask % mod)] += d[x][(int) (mask % mod)] % mod;
+        } else {
+            long newMask = 1L << y;
+            if ((mask & newMask) != 0L) {
+                calcBitMaskDominoByMod(d, n, m, mod, x, y + 1, mask, nextMask);
+            } else {
+                calcBitMaskDominoByMod(d, n, m, mod, x, y + 1, mask, nextMask | newMask);
+                if (y + 1 < m && (mask & newMask) == 0L && (mask & (newMask << 1L)) == 0L) {
+                    calcBitMaskDominoByMod(d, n, m, mod, x, y + 2, mask, nextMask);
+                }
+            }
+        }
+    }
+
+    // bitMaskSubsetsOfTheSetOfIntegers(9, 365);
+    private static void bitMaskSubsetsOfTheSetOfIntegers(int n, int printRow) {
+        Set<String> sets = new TreeSet<>();
+        for (int mask = 0; mask < (1 << n); mask++) {
+            StringBuilder sb = new StringBuilder("{");
+            for (int j = 0; j < n; j++) {
+                if ((mask & (1 << j)) == 0) {
+                    sb.append(j + 1);
+                    sb.append(",");
+                }
+            }
+            sets.add(sb.substring(0, sb.length() > 2 ? sb.length() - 1 : sb.length()) + "}");
+        }
+        sets.stream().skip(printRow - 1).findFirst().ifPresent(System.out::println);
+    }
+
+    // ((13 & 17) ^ (1 << 5)) = 33 [100001]
+    // x ^= (1 << i) -> Заменяет i-й бит числа x на 1, если он был равен 0, и на 0, если он был равен 1.
+
+    // bitMaskDomino(5, 6);
+    private static void bitMaskDomino(int n, int m) {
+        int[][] d = new int[n + 1][1 << m];
+        d[0][0] = 1;
+        for (int x = 0; x < n; x++) {
+            for (int mask = 0; mask < (1 << m); mask++) {
+                calcBitMaskDomino(d, n, m, x, 0, mask, 0);
+            }
+        }
+        System.out.println(d[n][0]);
+    }
+
+    private static void calcBitMaskDomino(int[][] d, int n, int m, int x, int y, int mask, int nextMask) {
+        if (x == n) return;
+        if (y >= m) {
+            d[x + 1][nextMask] += d[x][mask];
+        } else {
+            int newMask = 1 << y;
+            if ((mask & newMask) != 0) {
+                calcBitMaskDomino(d, n, m, x, y + 1, mask, nextMask);
+            } else {
+                calcBitMaskDomino(d, n, m, x, y + 1, mask, nextMask | newMask);
+                if (y + 1 < m && (mask & newMask) == 0 && (mask & (newMask << 1)) == 0) {
+                    calcBitMaskDomino(d, n, m, x, y + 2, mask, nextMask);
+                }
+            }
+        }
+    }
+
+    // bitMaskSalesman();
+    private static void bitMaskSalesman() {
+        Integer[][] roads = new Integer[10][10];
+        roads[0] = Arrays.stream("0 41 67 0 78 5 91 4 18 67".split(" ")).map(Integer::parseInt).toArray(Integer[]::new);
+        roads[1] = Arrays.stream("41 0 34 69 58 45 95 2 95 99".split(" ")).map(Integer::parseInt).toArray(Integer[]::new);
+        roads[2] = Arrays.stream("67 34 0 24 62 81 42 53 47 35".split(" ")).map(Integer::parseInt).toArray(Integer[]::new);
+        roads[3] = Arrays.stream("0 69 24 0 64 27 27 92 26 94".split(" ")).map(Integer::parseInt).toArray(Integer[]::new);
+        roads[4] = Arrays.stream("78 58 62 64 0 61 36 82 71 3".split(" ")).map(Integer::parseInt).toArray(Integer[]::new);
+        roads[5] = Arrays.stream("5 45 81 27 61 0 91 21 38 11".split(" ")).map(Integer::parseInt).toArray(Integer[]::new);
+        roads[6] = Arrays.stream("91 95 42 27 36 91 0 16 69 22".split(" ")).map(Integer::parseInt).toArray(Integer[]::new);
+        roads[7] = Arrays.stream("4 2 53 92 82 21 16 0 12 33".split(" ")).map(Integer::parseInt).toArray(Integer[]::new);
+        roads[8] = Arrays.stream("18 95 47 26 71 38 69 12 0 73".split(" ")).map(Integer::parseInt).toArray(Integer[]::new);
+        roads[9] = Arrays.stream("67 99 35 94 3 11 22 33 73 0".split(" ")).map(Integer::parseInt).toArray(Integer[]::new);
+
+        int n = roads.length;
+        int[][] d = new int[1 << n][n];
+        for (int[] ints : d) fill(ints, Integer.MAX_VALUE);
+        d[0][0] = 0;
+        for (int mask = 0; mask < (1 << n); mask++) {
+            for (int i = 0; i < n; i++) {
+                if (d[mask][i] == Integer.MAX_VALUE) continue;
+                for (int j = 0; j < n; j++) {
+                    if ((mask & (1 << j)) == 0) {
+                        d[mask ^ (1 << j)][j] = min(d[mask ^ (1 << j)][j], d[mask][i] + roads[i][j]);
+                    }
+                }
+            }
+        }
+        System.out.println(d[(1 << n) - 1][0]);
+    }
+
+    // 21-27+34+20-29-24+38+38-22-24=25
+    // 91-67-84-50-69-74-78-58-62-64-55-95-81-77-61-91-95-92-77-86-91-54-52-53-92-82-71-66-68-95-97-76-71+88-69-62-67-99-85-94-53-61-72-83-73-64-91-61-53-68=-3360
+    private static void bitMaskArithmeticExpression(int[] args, int result) {
+        int n = args.length;
+        for (long mask = 0; mask < (1L << n); mask = mask + 2) {
+            int res = args[0];
+            char[] actions = new char[n - 1];
+            for (int i = 1; i < n; i++) {
+                if ((mask & (1L << i)) == 0) {
+                    res = res - args[i];
+                    actions[i - 1] = '-';
+                } else {
+                    res = res + args[i];
+                    actions[i - 1] = '+';
+                }
+            }
+            if (res == result) {
+                System.out.print(args[0]);
+                for (int i = 1; i < args.length; i++) {
+                    System.out.print(actions[i - 1]);
+                    System.out.print(args[i]);
+                }
+                System.out.print("=" + res);
+                System.out.println();
+                return;
+            }
+        }
+    }
+
     private static void dynamicArithmeticExpression(int[] args, int result) {
         int n = args.length;
         int[][] storage = new int[n][];
@@ -433,7 +572,7 @@ public class Solution {
         int x1 = 1;
         int x2 = 1;
         int x3 = x1 + x2;
-        int res = 0;
+        int res = x3 + x1;
         for (int i = 3; i < n; i++) {
             res = x3 + x1;
             x1 = x2;
@@ -447,7 +586,7 @@ public class Solution {
     private static void dynamicDomino(int n) {
         int x1 = 1;
         int x2 = 1;
-        int res = 0;
+        int res = x1 + x2;
         for (int i = 2; i < n; i++) {
             res = x1 + x2;
             x1 = x2;
